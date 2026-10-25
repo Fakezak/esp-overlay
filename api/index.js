@@ -5,20 +5,20 @@ export default async function handler(req, res) {
   res.setHeader("access-control-allow-origin", "*");
   res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS");
   res.setHeader("access-control-allow-headers", "Content-Type, Authorization");
-  
-  // CRITICAL: Expose headers so the game can read auth and ESP data
   res.setHeader("access-control-expose-headers", "x-user-uid, x-auth, x-ban, x-suspension, x-blacklist, x-whitelist, x-protection, x-protection-expires, x-esp-post-url, x-esp-fps");
 
   if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
 
+  // Check BOTH the URL path and the query parameters to be 100% safe
   const url = req.url || "";
+  const route = req.query.route || "";
 
   // ==========================================
-  // ROUTE 1: AUTH & ESP MANIFEST (GET /auth or /esp)
+  // ROUTE 1: AUTH (GET /api?route=auth)
   // ==========================================
-  if (url.includes("/auth") || url.includes("/esp")) {
+  if (url.includes("auth") || route === "auth") {
     res.setHeader("content-type", "text/plain; charset=utf-8");
     
     const playerId = req.query.id || "unknown";
@@ -34,17 +34,16 @@ export default async function handler(req, res) {
     res.setHeader("x-protection", "active");
     res.setHeader("x-protection-expires", expiresDate.toISOString());
 
-    // Tell the game where to send data
-    res.setHeader("x-esp-post-url", "/api/frame");
+    res.setHeader("x-esp-post-url", "/api?route=frame");
     res.setHeader("x-esp-fps", "5");
 
     return res.status(200).send("OK");
   }
 
   // ==========================================
-  // ROUTE 2: RECEIVE DATA (POST /frame)
+  // ROUTE 2: RECEIVE DATA (POST /api?route=frame)
   // ==========================================
-  if (url.includes("/frame")) {
+  if (url.includes("frame") || route === "frame") {
     if (req.method !== "POST") {
       return res.status(405).json({ error: "Use POST request" });
     }
@@ -65,9 +64,9 @@ export default async function handler(req, res) {
   }
 
   // ==========================================
-  // ROUTE 3: VIEWER READS DATA (GET /view)
+  // ROUTE 3: VIEWER READS DATA (GET /api?route=view)
   // ==========================================
-  if (url.includes("/view")) {
+  if (url.includes("view") || route === "view") {
     const latest = globalThis.espFrames.length > 0 
       ? globalThis.espFrames[globalThis.espFrames.length - 1] 
       : { entities: [] };
@@ -78,5 +77,5 @@ export default async function handler(req, res) {
   // ==========================================
   // FALLBACK
   // ==========================================
-  return res.status(404).json({ error: "Route not found" });
+  return res.status(404).json({ error: "Route not found", debug_url: url, debug_route: route });
 }
