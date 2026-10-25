@@ -1,8 +1,11 @@
+globalThis.espFrames = globalThis.espFrames || [];
+
 export default function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader("access-control-allow-origin", "*");
   
-  const frames = globalThis.espFrames || [];
-  const latest = frames.length > 0 ? frames[frames.length - 1] : { entities: [] };
+  const latest = globalThis.espFrames.length > 0 
+    ? globalThis.espFrames[globalThis.espFrames.length - 1] 
+    : { entities: [] };
   
-  res.status(200).json(latest);
+  return res.status(200).json(latest);
 }
