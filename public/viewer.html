@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>ESP Viewer</title>
+  <style>
+    html, body { margin: 0; background: #000; overflow: hidden; }
+    canvas { display: block; }
+    #hud {
+      position: fixed; top: 8px; left: 8px; color: #0f0;
+      font: 12px monospace; z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div id="hud">connecting…</div>
+  <canvas id="c" width="1280" height="720"></canvas>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const c = document.getElementById('c');
+    const ctx = c.getContext('2d');
+    const hud = document.getElementById('hud');
+
+    function resize() {
+      c.width = window.innerWidth;
+      c.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    fetch('/esp')
+      .then(r => r.json())
+      .then(manifest => {
+        hud.textContent = `manifest ok • socket: ${manifest.socketUrl}`;
+        const socket = io(manifest.socketUrl, { path: manifest.socketPath });
+
+        socket.on('connect', () => {
+          hud.textContent = `socket connected • ${manifest.socketUrl}`;
+        });
+
+        socket.on('connect_error', (e) => {
+          hud.textContent = `socket error: ${e.message}`;
+        });
+
+        socket.on('esp:view', ({ entities = [] } = {}) => {
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.strokeStyle = '#0f0';
+          ctx.fillStyle = '#0f0';
+          ctx.font = '12px monospace';
+          for (const e of entities) {
+            const x = e.pos?.x ?? 0;
+            const y = e.pos?.y ?? 0;
+            ctx.strokeRect(x - 20, y - 40, 40, 80);
+            ctx.fillText(`#${e.id} ${e.team ?? ''} hp:${e.health ?? '?'}`, x - 20, y - 45);
+          }
+        });
+      })
+      .catch(err => {
+        hud.textContent = `manifest error: ${err.message}`;
+      });
+  </script>
+</body>
+</html>
