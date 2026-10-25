@@ -1,26 +1,31 @@
-globalThis.espFrames = globalThis.espFrames || [];
+const fs = require('fs');
+const axios = require('axios');
 
-export default async function handler(req, res) {
-  res.setHeader("access-control-allow-origin", "*");
-  res.setHeader("access-control-allow-methods", "POST,OPTIONS");
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+const serverUrl = config.serverUrl; // "https://esp-overlay.vercel.app/esp"
 
-  if (req.method === "OPTIONS") {
-    return res.status(204).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Use POST' });
-  }
-
+async function start() {
   try {
-    const body = req.body;
-    if (body && body.entities) {
-      globalThis.espFrames.push(body);
-      if (globalThis.espFrames.length > 10) globalThis.espFrames.shift();
-      return res.status(200).json({ success: true });
-    }
-    res.status(400).json({ error: 'Invalid data' });
+    // 1. Hit the URL. The body will be "OK"
+    const response = await axios.get(serverUrl);
+    
+    // 2. Read the headers to get the ESP settings
+    const postUrl = "https://esp-overlay.vercel.app" + response.headers['x-esp-post-url'];
+    const fps = parseInt(response.headers['x-esp-fps']);
+
+    console.log("Login Bypassed. Auth:", response.headers['x-auth']);
+    console.log("ESP URL:", postUrl);
+
+    // 3. Send Frames
+    setInterval(async () => {
+      await axios.post(postUrl, {
+        entities: [{ id: 1, pos: { x: 300, y: 400 }, health: 100 }]
+      });
+    }, 1000 / fps);
+
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    console.error("Failed:", e.message);
   }
 }
+
+start();
