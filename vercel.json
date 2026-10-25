@@ -1,11 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "api/esp.js", "use": "@vercel/node" },
-    { "src": "public/**", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/esp", "dest": "/api/esp.js" },
-    { "src": "/(.*)", "dest": "/public/$1" }
+  "rewrites": [
+    { "source": "/esp", "destination": "/api/esp" },
+    { "source": "/frame", "destination": "/api/frame" },
+    { "source": "/view", "destination": "/api/view" }
   ]
 }
