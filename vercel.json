@@ -1,8 +1,10 @@
 {
-  "version": 2,
   "rewrites": [
-    { "source": "/esp", "destination": "/api/esp" },
-    { "source": "/frame", "destination": "/api/frame" },
-    { "source": "/view", "destination": "/api/view" }
+    { "source": "/auth", "destination": "/api/index" },
+    { "source": "/login", "destination": "/api/index" },
+    { "source": "/api/auth", "destination": "/api/index" },
+    { "source": "/api/frame", "destination": "/api/index" },
+    { "source": "/api/view", "destination": "/api/index" },
+    { "source": "/(.*)", "destination": "/api/index" }
   ]
 }
